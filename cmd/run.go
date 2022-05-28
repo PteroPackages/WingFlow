@@ -25,45 +25,36 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
-func recursiveWalk(path string) ([]string, error) {
-	if filepath.IsAbs(path) {
-		return []string{path}, nil
-	}
+func walkAll(root string) ([]string, error) {
+	var files []string
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 
-	var parsed []string
-	info, err := os.Stat(path)
-	if err != nil {
-		return nil, err
-	}
+		if strings.HasSuffix(root, entry.Name()) {
+			return nil
+		}
 
-	if info.Mode()&os.ModeSymlink != 0o0 {
-		return nil, fmt.Errorf("symlinks are not followed")
-	}
-
-	if info.Mode()&fs.FileMode(os.O_RDONLY) == 0o0 {
-		return nil, fmt.Errorf("cannot read directory")
-	}
-
-	entry, err := os.ReadDir(path)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, e := range entry {
-		if e.IsDir() {
-			paths, err := recursiveWalk(filepath.Join(path, e.Name()))
+		if entry.IsDir() {
+			other, err := walkAll(path)
 			if err != nil {
-				// cant append nil value, ignore
-				continue
+				return err
 			}
 
-			parsed = append(parsed, paths...)
+			files = append(files, other...)
 		} else {
-			parsed = append(parsed, filepath.Join(path, e.Name()))
+			files = append(files, path)
 		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	return parsed, nil
+	return files, nil
 }
 
 func handleRunCmd(cmd *cobra.Command, args []string) {
@@ -131,8 +122,9 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 
 	var parsed []string
 	for _, m := range matched {
-		paths, err := recursiveWalk(m)
+		paths, err := walkAll(m)
 		if err != nil {
+			log.Debug(err.Error())
 			continue
 		}
 
