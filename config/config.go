@@ -56,22 +56,11 @@ type Config struct {
 
 func exists(path string) bool {
 	if _, err := os.Stat(path); err != nil {
-		if os.IsNotExist(err) {
-			return false
-		}
+		return !os.IsNotExist(err)
 	}
+
 	return true
 }
-
-// func writable(path string) (bool, error) {
-// 	info, err := os.Stat(path)
-// 	if err != nil {
-// 		return false, errors.New("could not stat file path")
-// 	}
-
-// 	perms := info.Mode()&fs.FileMode(os.O_RDONLY) != 0o0
-// 	return perms, nil
-// }
 
 func Fetch(dir string) (*Config, error) {
 	path := filepath.Join(filepath.Clean(dir), "wingflow.yml")
@@ -105,9 +94,7 @@ func Create(dir string) error {
 		return err
 	}
 
-	cfg := Config{}
-	buf, _ := yaml.Marshal(cfg)
-
+	buf, _ := yaml.Marshal(Config{})
 	defer file.Close()
 	file.Write(buf)
 

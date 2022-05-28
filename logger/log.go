@@ -6,8 +6,8 @@ import (
 )
 
 type Logger struct {
-	debug bool
 	color bool
+	debug bool
 }
 
 func New(color string, debug bool) *Logger {
@@ -61,6 +61,7 @@ func (l *Logger) Fatal(data string) {
 	} else {
 		fmt.Fprintf(os.Stderr, "FATL: %s\n", data)
 	}
+
 	os.Exit(1)
 }
 
@@ -70,5 +71,6 @@ func (l *Logger) WithFatal(err error) {
 	} else {
 		fmt.Fprintf(os.Stderr, "FATL: %v\n", err.Error())
 	}
+
 	os.Exit(1)
 }

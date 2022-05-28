@@ -40,8 +40,10 @@ var checkCmd = &cobra.Command{
 }
 
 var runCmd = &cobra.Command{
-	Use: "run",
-	Run: handleRunCmd,
+	Use:   "run",
+	Short: "fetches and deploys to pterodactyl",
+	Long:  "fetches and deploys the configured project to the pterodactyl server",
+	Run:   handleRunCmd,
 }
 
 func init() {
