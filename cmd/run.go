@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/pteropackages/wingflow/config"
-	_ "github.com/pteropackages/wingflow/http"
+	"github.com/pteropackages/wingflow/http"
 	"github.com/pteropackages/wingflow/logger"
 	"github.com/spf13/cobra"
 )
@@ -163,18 +163,16 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	io.Copy(tarfile, zipfile)
 	tarball.Close()
 
-	// client := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
-	// if ok, code, err := client.Test(); !ok {
-	// 	fmt.Fprintf(os.Stderr, "%s (code: %d)\n", err.Error(), code)
-	// 	os.Exit(1)
-	// }
-	// fmt.Println("test request succeeded; fetching upload url...")
+	client := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
+	if ok, code, err := client.Test(); !ok {
+		log.Fatal("%s (code: %d)", err.Error(), code)
+	}
+	log.Info("test request succeeded; fetching upload url...")
 
-	// url, err := client.GetUploadURL()
-	// if err != nil {
-	// 	fmt.Fprintln(os.Stderr, err.Error())
-	// 	os.Exit(1)
-	// }
+	url, err := client.GetUploadURL()
+	if err != nil {
+		log.WithFatal(err)
+	}
 
-	// fmt.Println(url)
+	log.Debug(url)
 }
