@@ -59,6 +59,30 @@ func walkAll(root string) ([]string, error) {
 	return files, nil
 }
 
+func addToArchive(writer *tar.Writer, path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	info, _ := file.Stat()
+	header, err := tar.FileInfoHeader(info, info.Name())
+	if err != nil {
+		return err
+	}
+
+	if err = writer.WriteHeader(header); err != nil {
+		return err
+	}
+
+	if _, err = io.Copy(writer, file); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func handleRunCmd(cmd *cobra.Command, args []string) {
 	nc := cmd.Flag("no-color").Value.String()
 	dir := cmd.Flag("dir").Value.String()
@@ -137,42 +161,39 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 		log.Fatal("no files could be resolved to an absolute path")
 	}
 
-	zipfile, err := os.CreateTemp("", "export-*.gz")
+	tarfile, err := os.CreateTemp("", "export-*.tar.gz")
+	// testing
+	// tarfile, err := os.Create("export.tar.gz")
 	if err != nil {
 		log.Fatal("the system temp directory is unavailable")
 	}
+	tstat, _ := tarfile.Stat()
+	defer tarfile.Close()
 
-	writer := gzip.NewWriter(zipfile)
-	writer.Name = zipfile.Name()
+	gz := gzip.NewWriter(tarfile)
+	tz := tar.NewWriter(gz)
+	defer gz.Close()
+	defer tz.Close()
 
 	for _, p := range parsed {
-		file, _ := os.Open(p)
-		io.Copy(writer, file)
+		log.Debug(p)
+		if err = addToArchive(tz, p); err != nil {
+			log.Warn("failed to archive file:")
+			log.Warn(p)
+		}
 	}
-	writer.Close()
 
-	tarfile, err := os.CreateTemp("", "export-*.tar.gz")
-	if err != nil {
-		log.Fatal("the system temp directory is unavailable")
-	}
-	info, _ := tarfile.Stat()
-
-	tarball := tar.NewWriter(tarfile)
-	header, _ := tar.FileInfoHeader(info, info.Name())
-	tarball.WriteHeader(header)
-	io.Copy(tarfile, zipfile)
-	tarball.Close()
+	log.Info("completed archive; uploading to server")
 
 	client := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
 	if ok, code, err := client.Test(); !ok {
-		log.Fatal("%s (code: %d)", err.Error(), code)
+		log.Fatal("%s (code: %d)", code, err.Error())
 	}
-	log.Info("test request succeeded; fetching upload url...")
 
-	if err = client.UploadFile(info.Name(), tarfile); err != nil {
-		log.Error("failed to upload file:")
+	if err = client.UploadFile(tstat.Name(), tarfile); err != nil {
+		log.Error("failed to upload tarball:")
 		log.WithFatal(err)
 	}
 
-	log.Info("successfully uploaded repository contents")
+	log.Info("tarball upload complete")
 }
