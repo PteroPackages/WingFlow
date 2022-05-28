@@ -1,0 +1,76 @@
+package cmd
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+
+	"github.com/pteropackages/wingflow/config"
+	_ "github.com/pteropackages/wingflow/http"
+	"github.com/spf13/cobra"
+)
+
+func contains(slice []string, item string) bool {
+	for _, i := range slice {
+		if i == item {
+			return true
+		}
+	}
+
+	return false
+}
+
+// func inPattern(slice []string, item string) bool {
+// 	for _, i := range slice {
+// 		if ok, _ := filepath.Match(i, item); ok {
+// 			return true
+// 		}
+// 	}
+
+// 	return false
+// }
+
+func handleRunCmd(cmd *cobra.Command, args []string) {
+	dir := cmd.Flag("dir").Value.String()
+	cfg, err := config.Fetch(dir)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	if _, err = exec.Command("git", "--version").Output(); err != nil {
+		fmt.Fprintln(os.Stderr, "git must be installed for this command")
+		os.Exit(1)
+	}
+
+	temp, err := os.MkdirTemp("", "wflow-*")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "the system temp directory is unavailable")
+		os.Exit(1)
+	}
+
+	if _, err = exec.Command("git", "clone", cfg.Git.Address, temp).Output(); err != nil {
+		fmt.Fprintln(os.Stderr, "failed to clone repository into temp directory")
+		os.Exit(1)
+	}
+
+	// safety check
+	if !contains(cfg.Repository.Exclude, ".git") {
+		cfg.Repository.Exclude = append(cfg.Repository.Exclude, ".git")
+	}
+
+	// client := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
+	// if ok, code, err := client.Test(); !ok {
+	// 	fmt.Fprintf(os.Stderr, "%s (code: %d)\n", err.Error(), code)
+	// 	os.Exit(1)
+	// }
+	// fmt.Println("test request succeeded; fetching upload url...")
+
+	// url, err := client.GetUploadURL()
+	// if err != nil {
+	// 	fmt.Fprintln(os.Stderr, err.Error())
+	// 	os.Exit(1)
+	// }
+
+	// fmt.Println(url)
+}
