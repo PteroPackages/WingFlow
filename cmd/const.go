@@ -1,3 +1,3 @@
 package cmd
 
-var Version = "debug"
+var Version = "dev"

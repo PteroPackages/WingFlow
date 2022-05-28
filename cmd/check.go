@@ -1,19 +1,17 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/pteropackages/wingflow/config"
+	"github.com/pteropackages/wingflow/logger"
 	"github.com/spf13/cobra"
 )
 
 func handleCheckCmd(cmd *cobra.Command, args []string) {
+	log := logger.New(true)
 	dir := cmd.Flag("dir").Value.String()
 	cfg, err := config.Fetch(dir)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
+		log.WithFatal(err)
 	}
 
 	var stack []string
@@ -40,11 +38,11 @@ func handleCheckCmd(cmd *cobra.Command, args []string) {
 	}
 
 	if len(stack) == 0 {
-		fmt.Println("0 issues found")
+		log.Info("0 issues found")
 	} else {
-		fmt.Fprintf(os.Stderr, "%d error(s) found:\n", len(stack))
-		for i, e := range stack {
-			fmt.Fprintf(os.Stderr, "%d: %s\n", i, e)
+		log.Error("%d error(s) found:", len(stack))
+		for _, e := range stack {
+			log.Error("  - %s", e)
 		}
 	}
 }

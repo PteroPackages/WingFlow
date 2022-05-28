@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 
 	"github.com/pteropackages/wingflow/config"
 	_ "github.com/pteropackages/wingflow/http"
+	"github.com/pteropackages/wingflow/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -31,27 +31,24 @@ func contains(slice []string, item string) bool {
 // }
 
 func handleRunCmd(cmd *cobra.Command, args []string) {
+	log := logger.New(true)
 	dir := cmd.Flag("dir").Value.String()
 	cfg, err := config.Fetch(dir)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
+		log.WithFatal(err)
 	}
 
 	if _, err = exec.Command("git", "--version").Output(); err != nil {
-		fmt.Fprintln(os.Stderr, "git must be installed for this command")
-		os.Exit(1)
+		log.Fatal("git must be installed for this command")
 	}
 
 	temp, err := os.MkdirTemp("", "wflow-*")
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "the system temp directory is unavailable")
-		os.Exit(1)
+		log.Fatal("the system temp directory is unavailable")
 	}
 
 	if _, err = exec.Command("git", "clone", cfg.Git.Address, temp).Output(); err != nil {
-		fmt.Fprintln(os.Stderr, "failed to clone repository into temp directory")
-		os.Exit(1)
+		log.Fatal("failed to clone repository into temp directory")
 	}
 
 	// safety check

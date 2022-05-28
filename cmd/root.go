@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/pteropackages/wingflow/config"
+	"github.com/pteropackages/wingflow/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -21,10 +21,11 @@ var initCmd = &cobra.Command{
 	Short: "creates a new config file",
 	Long:  "creates a new config file in the current workspace (or a specified one)",
 	Run: func(cmd *cobra.Command, args []string) {
+		log := logger.New(true)
 		dir := cmd.Flag("dir").Value.String()
 		err := config.Create(dir)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
+			log.WithFatal(err)
 		}
 	},
 }
