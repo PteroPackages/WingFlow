@@ -169,10 +169,10 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	}
 	log.Info("test request succeeded; fetching upload url...")
 
-	url, err := client.GetUploadURL()
-	if err != nil {
+	if err = client.UploadFile(info.Name(), tarfile); err != nil {
+		log.Error("failed to upload file:")
 		log.WithFatal(err)
 	}
 
-	log.Debug(url)
+	log.Info("successfully uploaded repository contents")
 }

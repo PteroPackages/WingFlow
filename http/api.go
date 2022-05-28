@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -38,9 +40,7 @@ func (c *Client) addHeaders(req *http.Request) {
 }
 
 func (c *Client) route(path string) string {
-	if strings.Contains(path, ":id") {
-		path = strings.Replace(path, ":id", c.ID, 1)
-	}
+	path = strings.Replace(path, ":id", c.ID, 1)
 
 	return fmt.Sprintf("%s/api/client%s", c.URL, path)
 }
@@ -86,4 +86,38 @@ func (c *Client) GetUploadURL() (string, error) {
 	json.Unmarshal(buf, &data)
 
 	return data.Attributes.URL, nil
+}
+
+func (c *Client) UploadFile(name string, file *os.File) error {
+	body := bytes.Buffer{}
+	writer := multipart.NewWriter(&body)
+
+	part, _ := writer.CreateFormFile("files", name)
+	io.Copy(part, file)
+	writer.Close()
+
+	url, err := c.GetUploadURL()
+	if err != nil {
+		return err
+	}
+
+	req, _ := http.NewRequest("POST", url, &body)
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+	res, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == http.StatusOK {
+		return nil
+	}
+
+	var data struct {
+		Error string
+	}
+	defer res.Body.Close()
+	buf, _ := io.ReadAll(res.Body)
+	json.Unmarshal(buf, &data)
+
+	return fmt.Errorf(data.Error)
 }
