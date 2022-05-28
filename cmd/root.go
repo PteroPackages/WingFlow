@@ -49,6 +49,7 @@ func init() {
 	runCmd.Flags().String("dir", dir, "the directory of the config file")
 
 	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(runCmd)
 }
 
