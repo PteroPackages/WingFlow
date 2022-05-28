@@ -31,9 +31,13 @@ func (l *Logger) Debug(data string) {
 	}
 }
 
-// func (*Logger) Warn(data string) {
-// 	fmt.Printf("WARN: %s\n", data)
-// }
+func (l *Logger) Warn(data string, args ...interface{}) {
+	if l.color {
+		fmt.Printf("\x1b[33mWARN\x1b[0m: %s\n", fmt.Sprintf(data, args...))
+	} else {
+		fmt.Printf("WARN: %s\n", fmt.Sprintf(data, args...))
+	}
+}
 
 func (l *Logger) Error(data string, args ...interface{}) {
 	if l.color {
