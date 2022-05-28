@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,6 +23,47 @@ func contains(slice []string, item string) bool {
 	}
 
 	return false
+}
+
+func recursiveWalk(path string) ([]string, error) {
+	if filepath.IsAbs(path) {
+		return []string{path}, nil
+	}
+
+	var parsed []string
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if info.Mode()&os.ModeSymlink != 0o0 {
+		return nil, fmt.Errorf("symlinks are not followed")
+	}
+
+	if info.Mode()&fs.FileMode(os.O_RDONLY) == 0o0 {
+		return nil, fmt.Errorf("cannot read directory")
+	}
+
+	entry, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range entry {
+		if e.IsDir() {
+			paths, err := recursiveWalk(filepath.Join(path, e.Name()))
+			if err != nil {
+				// cant append nil value, ignore
+				continue
+			}
+
+			parsed = append(parsed, paths...)
+		} else {
+			parsed = append(parsed, filepath.Join(path, e.Name()))
+		}
+	}
+
+	return parsed, nil
 }
 
 func handleRunCmd(cmd *cobra.Command, args []string) {
@@ -75,11 +117,30 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 		return false
 	}
 
-	var parsed []string
+	var matched []string
 	for _, f := range files {
 		if match(f) {
-			parsed = append(parsed, f)
+			matched = append(matched, f)
 		}
+	}
+
+	if len(matched) == 0 {
+		log.Error("no files matched the configured patterns")
+		log.Fatal("please ensure the patterns resolve to files in the repository")
+	}
+
+	var parsed []string
+	for _, m := range matched {
+		paths, err := recursiveWalk(m)
+		if err != nil {
+			continue
+		}
+
+		parsed = append(parsed, paths...)
+	}
+
+	if len(parsed) == 0 {
+		log.Fatal("no files could be resolved to an absolute path")
 	}
 
 	fmt.Println(parsed)
