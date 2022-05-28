@@ -1,8 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/pteropackages/wingflow/config"
 	_ "github.com/pteropackages/wingflow/http"
@@ -19,16 +23,6 @@ func contains(slice []string, item string) bool {
 
 	return false
 }
-
-// func inPattern(slice []string, item string) bool {
-// 	for _, i := range slice {
-// 		if ok, _ := filepath.Match(i, item); ok {
-// 			return true
-// 		}
-// 	}
-
-// 	return false
-// }
 
 func handleRunCmd(cmd *cobra.Command, args []string) {
 	nc := cmd.Flag("no-color").Value.String()
@@ -57,6 +51,38 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	if !contains(cfg.Repository.Exclude, ".git") {
 		cfg.Repository.Exclude = append(cfg.Repository.Exclude, ".git")
 	}
+
+	files, err := filepath.Glob(filepath.Join(temp, "*"))
+	if err != nil {
+		log.WithFatal(err)
+	}
+
+	var includes []*regexp.Regexp
+	replacer := strings.NewReplacer("*", ".*")
+	for _, p := range cfg.Repository.Include {
+		cleaned := filepath.Clean(p)
+		cleaned = replacer.Replace(cleaned)
+		includes = append(includes, regexp.MustCompile(cleaned))
+	}
+
+	match := func(f string) bool {
+		for _, e := range includes {
+			if e.Match([]byte(f)) {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	var parsed []string
+	for _, f := range files {
+		if match(f) {
+			parsed = append(parsed, f)
+		}
+	}
+
+	fmt.Println(parsed)
 
 	// client := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
 	// if ok, code, err := client.Test(); !ok {
