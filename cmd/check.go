@@ -7,7 +7,7 @@ import (
 )
 
 func handleCheckCmd(cmd *cobra.Command, args []string) {
-	log := logger.New(true)
+	log := logger.New(true, true)
 	dir := cmd.Flag("dir").Value.String()
 	cfg, err := config.Fetch(dir)
 	if err != nil {
@@ -17,24 +17,24 @@ func handleCheckCmd(cmd *cobra.Command, args []string) {
 	var stack []string
 
 	if cfg.Git.Address == "" {
-		stack = append(stack, "git.address is required")
+		stack = append(stack, "'git.address' is required")
 	}
 
 	if cfg.Panel.URL == "" {
-		stack = append(stack, "panel.url is required")
+		stack = append(stack, "'panel.url' is required")
 	}
 	if cfg.Panel.Key == "" {
-		stack = append(stack, "panel.key is required")
+		stack = append(stack, "'panel.key' is required")
 	}
 	if len(cfg.Panel.Key) < 32 {
-		stack = append(stack, "could not validate panel.key")
+		stack = append(stack, "could not validate 'panel.key'")
 	}
 	if cfg.Panel.ID == "" {
-		stack = append(stack, "panel.id is required")
+		stack = append(stack, "'panel.id' is required")
 	}
 
 	if len(cfg.Repository.Include) == 0 {
-		stack = append(stack, "at least 1 file path or pattern is required for repository.include")
+		stack = append(stack, "at least 1 file path or pattern is required for 'repository.include'")
 	}
 
 	if len(stack) == 0 {

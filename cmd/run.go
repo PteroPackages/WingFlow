@@ -31,7 +31,7 @@ func contains(slice []string, item string) bool {
 // }
 
 func handleRunCmd(cmd *cobra.Command, args []string) {
-	log := logger.New(true)
+	log := logger.New(true, true)
 	dir := cmd.Flag("dir").Value.String()
 	cfg, err := config.Fetch(dir)
 	if err != nil {
