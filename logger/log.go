@@ -10,8 +10,11 @@ type Logger struct {
 	color bool
 }
 
-func New(color, debug bool) *Logger {
-	return &Logger{color: color, debug: debug}
+func New(color string, debug bool) *Logger {
+	return &Logger{
+		color: color == "false",
+		debug: debug,
+	}
 }
 
 func (l *Logger) Info(data string) {
