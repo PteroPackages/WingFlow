@@ -55,11 +55,11 @@ func (l *Logger) WithError(err error) {
 	}
 }
 
-func (l *Logger) Fatal(data string) {
+func (l *Logger) Fatal(data string, args ...interface{}) {
 	if l.color {
-		fmt.Fprintf(os.Stderr, "\x1b[31mFATL\x1b[0m: %s\n", data)
+		fmt.Fprintf(os.Stderr, "\x1b[31mFATL\x1b[0m: %s\n", fmt.Sprintf(data, args...))
 	} else {
-		fmt.Fprintf(os.Stderr, "FATL: %s\n", data)
+		fmt.Fprintf(os.Stderr, "FATL: %s\n", fmt.Sprintf(data, args...))
 	}
 
 	os.Exit(1)
