@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"runtime/debug"
 
 	"github.com/pteropackages/wingflow/config"
 	"github.com/pteropackages/wingflow/logger"
@@ -10,6 +11,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:       "wflow",
+	Example:   "wflow [flags...] <command>",
 	Short:     "automatic project deployment for pterodactyl",
 	Long:      "a cli tool for automatically deploying projects to pterodactyl",
 	ValidArgs: []string{"init", "check", "run"},
@@ -72,5 +74,15 @@ func init() {
 }
 
 func Execute() {
+	defer func() {
+		if state := recover(); state != nil {
+			stack := debug.Stack()
+
+			log := logger.New("true", false)
+			log.Error("%v", state)
+			log.Fatal(string(stack))
+		}
+	}()
+
 	rootCmd.Execute()
 }
