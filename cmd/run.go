@@ -1,7 +1,9 @@
 package cmd
 
 import (
-	"fmt"
+	"archive/tar"
+	"compress/gzip"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -135,7 +137,31 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 		log.Fatal("no files could be resolved to an absolute path")
 	}
 
-	fmt.Println(parsed)
+	zipfile, err := os.CreateTemp("", "export-*.gz")
+	if err != nil {
+		log.Fatal("the system temp directory is unavailable")
+	}
+
+	writer := gzip.NewWriter(zipfile)
+	writer.Name = zipfile.Name()
+
+	for _, p := range parsed {
+		file, _ := os.Open(p)
+		io.Copy(writer, file)
+	}
+	writer.Close()
+
+	tarfile, err := os.CreateTemp("", "export-*.tar.gz")
+	if err != nil {
+		log.Fatal("the system temp directory is unavailable")
+	}
+	info, _ := tarfile.Stat()
+
+	tarball := tar.NewWriter(tarfile)
+	header, _ := tar.FileInfoHeader(info, info.Name())
+	tarball.WriteHeader(header)
+	io.Copy(tarfile, zipfile)
+	tarball.Close()
 
 	// client := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
 	// if ok, code, err := client.Test(); !ok {
