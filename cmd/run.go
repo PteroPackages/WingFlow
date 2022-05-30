@@ -172,8 +172,6 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 
 	gz := gzip.NewWriter(tarfile)
 	tz := tar.NewWriter(gz)
-	defer gz.Close()
-	defer tz.Close()
 
 	for _, p := range parsed {
 		log.Debug(p)
@@ -182,6 +180,8 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 			log.Warn(p)
 		}
 	}
+	gz.Close()
+	tz.Close()
 
 	log.Info("completed archive; uploading to server")
 
