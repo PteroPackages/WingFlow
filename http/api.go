@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 )
 
 type Client struct {
@@ -22,21 +21,21 @@ type Client struct {
 
 func New(url, key, id string) *Client {
 	return &Client{
-		URL: url,
-		Key: key,
-		ID:  id,
-		client: http.Client{
-			Timeout: time.Second * 10,
-		},
+		URL:    url,
+		Key:    key,
+		ID:     id,
+		client: http.Client{},
 	}
 }
 
-func (c *Client) addHeaders(req *http.Request) {
+func (c *Client) addHeaders(req *http.Request) *http.Request {
 	req.Header.Add("User-Agent", "WingFlow Client")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.Key))
 	// allow override here
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "application/json")
+
+	return req
 }
 
 func (c *Client) route(path string) string {
@@ -47,7 +46,7 @@ func (c *Client) route(path string) string {
 
 func (c *Client) Test() (bool, int, error) {
 	req, _ := http.NewRequest("HEAD", c.route(""), nil)
-	c.addHeaders(req)
+	req = c.addHeaders(req)
 
 	res, err := c.client.Do(req)
 	if err != nil {
@@ -64,7 +63,7 @@ func (c *Client) Test() (bool, int, error) {
 func (c *Client) GetUploadURL() (string, error) {
 	body := bytes.Buffer{}
 	req, _ := http.NewRequest("GET", c.route("/servers/:id/files/upload"), &body)
-	c.addHeaders(req)
+	req = c.addHeaders(req)
 
 	res, err := c.client.Do(req)
 	if err != nil {
@@ -102,7 +101,10 @@ func (c *Client) UploadFile(name string, file *os.File) error {
 	}
 
 	req, _ := http.NewRequest("POST", url, &body)
-	req.Header.Add("Content-Type", writer.FormDataContentType())
+	req = c.addHeaders(req)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Add("X-Mime-Type", "application/gzip")
+
 	res, err := c.client.Do(req)
 	if err != nil {
 		return err
