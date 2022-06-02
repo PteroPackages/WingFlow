@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"archive/tar"
-	"compress/gzip"
-	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -12,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/pteropackages/wingflow/config"
-	"github.com/pteropackages/wingflow/http"
 	"github.com/pteropackages/wingflow/logger"
 	"github.com/spf13/cobra"
 )
@@ -59,30 +55,6 @@ func walkAll(root string) ([]string, error) {
 	return files, nil
 }
 
-func addToArchive(writer *tar.Writer, path string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	info, _ := file.Stat()
-	header, err := tar.FileInfoHeader(info, info.Name())
-	if err != nil {
-		return err
-	}
-
-	if err = writer.WriteHeader(header); err != nil {
-		return err
-	}
-
-	if _, err = io.Copy(writer, file); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func handleRunCmd(cmd *cobra.Command, args []string) {
 	nc := cmd.Flag("no-color").Value.String()
 	dir := cmd.Flag("dir").Value.String()
@@ -119,12 +91,23 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	var includes []*regexp.Regexp
 	replacer := strings.NewReplacer("*", ".*")
 	for _, p := range cfg.Repository.Include {
-		cleaned := filepath.Clean(p)
-		cleaned = replacer.Replace(cleaned)
+		cleaned := replacer.Replace(filepath.Clean(p))
 		includes = append(includes, regexp.MustCompile(cleaned))
 	}
 
+	var excludes []*regexp.Regexp
+	for _, p := range cfg.Repository.Exclude {
+		cleaned := replacer.Replace(filepath.Clean(p))
+		excludes = append(excludes, regexp.MustCompile(cleaned))
+	}
+
 	match := func(f string) bool {
+		for _, e := range excludes {
+			if e.Match([]byte(f)) {
+				return false
+			}
+		}
+
 		for _, e := range includes {
 			if e.Match([]byte(f)) {
 				return true
@@ -160,40 +143,4 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	if len(parsed) == 0 {
 		log.Fatal("no files could be resolved to an absolute path")
 	}
-
-	tarfile, err := os.CreateTemp("", "export-*.tar.gz")
-	// testing
-	// tarfile, err := os.Create("export.tar.gz")
-	if err != nil {
-		log.Fatal("the system temp directory is unavailable")
-	}
-	tstat, _ := tarfile.Stat()
-	defer tarfile.Close()
-
-	gz := gzip.NewWriter(tarfile)
-	tz := tar.NewWriter(gz)
-
-	for _, p := range parsed {
-		log.Debug(p)
-		if err = addToArchive(tz, p); err != nil {
-			log.Warn("failed to archive file:")
-			log.Warn(p)
-		}
-	}
-	gz.Close()
-	tz.Close()
-
-	log.Info("completed archive; uploading to server")
-
-	client := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
-	if ok, code, err := client.Test(); !ok {
-		log.Fatal("%s (code: %d)", code, err.Error())
-	}
-
-	if err = client.UploadFile(tstat.Name(), tarfile); err != nil {
-		log.Error("failed to upload tarball:")
-		log.WithFatal(err)
-	}
-
-	log.Info("tarball upload complete")
 }
