@@ -17,17 +17,17 @@ func New(color string, debug bool) *Logger {
 	}
 }
 
-func (l *Logger) Info(data string) {
+func (l *Logger) Info(data string, args ...interface{}) {
 	if l.color {
-		fmt.Printf("\x1b[34mINFO\x1b[0m: %s\n", data)
+		fmt.Printf("\x1b[34mINFO\x1b[0m: %s\n", fmt.Sprintf(data, args...))
 	} else {
-		fmt.Printf("INFO: %s\n", data)
+		fmt.Printf("INFO: %s\n", fmt.Sprintf(data, args...))
 	}
 }
 
-func (l *Logger) Debug(data string) {
+func (l *Logger) Debug(data string, args ...interface{}) {
 	if l.debug {
-		fmt.Printf("DBUG: %s\n", data)
+		fmt.Printf("DBUG: %s\n", fmt.Sprintf(data, args...))
 	}
 }
 
