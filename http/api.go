@@ -87,6 +87,37 @@ func (c *Client) GetUploadURL() (string, error) {
 	return data.Attributes.URL, nil
 }
 
+func (c *Client) CreateDirectory(root, name string) error {
+	type payload struct {
+		Root string
+		Name string
+	}
+
+	body := bytes.Buffer{}
+	buf, _ := json.Marshal(payload{Root: root, Name: name})
+	body.Write(buf)
+	req, _ := http.NewRequest("POST", c.URL, &body)
+	req = c.addHeaders(req)
+
+	res, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == http.StatusNoContent {
+		return nil
+	}
+
+	var data struct {
+		Error string
+	}
+	defer res.Body.Close()
+	buf, _ = io.ReadAll(res.Body)
+	json.Unmarshal(buf, &data)
+
+	return fmt.Errorf(data.Error)
+}
+
 func (c *Client) UploadFile(name string, file *os.File) error {
 	body := bytes.Buffer{}
 	writer := multipart.NewWriter(&body)
