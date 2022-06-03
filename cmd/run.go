@@ -165,6 +165,17 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 		log.WithFatal(err)
 	}
 
+	log.Info("creating fallback archive...")
+	arc, err := http.CompressFiles(root)
+	if err != nil {
+		log.Error("faield to create fallback archive:")
+		log.WithFatal(err)
+	}
+
+	log.Warn("if the process is interrupted, restore this archive in the server")
+	log.Warn("to get your original files back:")
+	log.Warn("/home/container/%s", arc)
+
 	if len(cfg.System.Ignore) == 0 {
 		cfg.System.Ignore = append(cfg.System.Ignore, "*")
 	}

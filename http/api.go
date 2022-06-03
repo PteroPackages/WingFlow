@@ -166,3 +166,38 @@ func (c *Client) SetPower(state string) error {
 
 	return fmt.Errorf("unknown error: %d", res.StatusCode)
 }
+
+func (c *Client) CompressFiles(paths []string) (string, error) {
+	data := struct {
+		Root  string   `json:"root"`
+		Files []string `json:"files"`
+	}{Root: "/", Files: paths}
+
+	buf, _ := json.Marshal(data)
+	body := bytes.Buffer{}
+	body.Write(buf)
+
+	req, _ := http.NewRequest("POST", c.route("/servers/:id/files/compress"), &body)
+	req = c.addHeaders(req)
+
+	res, err := c.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unknown error: %d", res.StatusCode)
+	}
+
+	var wrapper struct {
+		Attributes struct {
+			Name string `json:"name"`
+		} `json:"attributes"`
+	}
+
+	defer res.Body.Close()
+	buf, _ = io.ReadAll(res.Body)
+	json.Unmarshal(buf, &wrapper)
+
+	return wrapper.Attributes.Name, nil
+}
