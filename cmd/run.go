@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -9,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/pteropackages/wingflow/config"
+	"github.com/pteropackages/wingflow/http"
 	"github.com/pteropackages/wingflow/logger"
 	ignore "github.com/sabhiram/go-gitignore"
 	"github.com/spf13/cobra"
@@ -112,5 +112,29 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 		log.Fatal("no files could be resolved to an absolute path")
 	}
 
-	fmt.Printf("%v\n", parsed)
+	http := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
+	if ok, code, err := http.Test(); !ok {
+		log.Fatal("%s (status: %d)", err.Error(), code)
+	}
+
+	wingsPath := func(p string) string {
+		c := filepath.Join("/", strings.Split(p, temp)[1])
+		if strings.Contains(c, "\\") {
+			return strings.ReplaceAll(c, "\\", "/")
+		}
+
+		return c
+	}
+
+	for n, p := range parsed {
+		log.Info("uploading file (%d/%d)", n+1, len(parsed))
+
+		if err = http.WriteFile(p, wingsPath(p)); err != nil {
+			log.Warn("failed to upload file:")
+			log.Warn(p)
+			log.Debug(err.Error())
+		}
+	}
+
+	log.Info("uploads completed")
 }
