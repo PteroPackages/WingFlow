@@ -120,6 +120,11 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 		log.Fatal("%s (status: %d)", err.Error(), code)
 	}
 
+	// TODO: force_kill?
+	if err = http.SetPower("stop"); err != nil {
+		log.Warn("failed to update power state")
+	}
+
 	root, err := http.GetRootFiles()
 	if err != nil {
 		log.WithFatal(err)
@@ -168,4 +173,7 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	}
 
 	log.Info("uploads completed")
+	if err = http.SetPower("start"); err != nil {
+		log.Warn("failed to update power state")
+	}
 }

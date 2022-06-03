@@ -142,3 +142,27 @@ func (c *Client) DeleteFiles(paths []string) error {
 
 	return fmt.Errorf("unknown error: %d", res.StatusCode)
 }
+
+func (c *Client) SetPower(state string) error {
+	data := struct {
+		Signal string `json:"signal"`
+	}{Signal: state}
+
+	buf, _ := json.Marshal(data)
+	body := bytes.Buffer{}
+	body.Write(buf)
+
+	req, _ := http.NewRequest("POST", c.route("/servers/:id/power"), &body)
+	req = c.addHeaders(req)
+
+	res, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == http.StatusNoContent {
+		return nil
+	}
+
+	return fmt.Errorf("unknown error: %d", res.StatusCode)
+}
