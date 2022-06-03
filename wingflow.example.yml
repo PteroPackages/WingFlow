@@ -1,35 +1,35 @@
 # example wingflow config file
 git:
-	# the git address/url to the repository
-	address: ""
+  # the git address/url to the repository
+  address: ""
 panel:
-	# the url to your pterodactyl panel
-	# this must be prefixed with http:// or https:// depending on what you're using
-	url: ""
+  # the url to your pterodactyl panel
+  # this must be prefixed with http:// or https:// depending on what you're using
+  url: ""
 
-	# a client API key that has access to your servers
-	key: ""
+  # a client API key that has access to your servers
+  key: ""
 
-	# the identifier of the server to deploy to
-	id: ""
+  # the identifier of the server to deploy to
+  id: ""
 
 repository:
-	# a list of files to include in the upload
-	# at least one file must be specified, by default "*" is set for all files
-	# this supports gitignore syntax
-	include:
-		- "*"
+  # a list of files to include in the upload
+  # at least one file must be specified, by default "*" is set for all files
+  # this supports gitignore syntax
+  include:
+    - "*"
 
-	# a list of files to exlude from the file upload
-	# this supports gitignore syntax
-	exlude: []
+  # a list of files to exlude from the file upload
+  # this supports gitignore syntax
+  exlude: []
 system:
-	# whether to force kill the server or send a normal stop signal
-	force_kill: false
+  # whether to force kill the server or send a normal stop signal
+  force_kill: false
 
-	# a list of files to ignore from being deleted during the upload process
-	# note that this is not checked when overwriting files after deletion
-	ignore: []
+  # a list of files to ignore from being deleted during the upload process
+  # note that this is not checked when overwriting files after deletion
+  ignore: []
 
 # a list of commands to run before starting the main process
 # these commands will run in your workspace, not the server or repository
