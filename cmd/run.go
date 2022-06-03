@@ -70,6 +70,8 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 		log.WithFatal(err)
 	}
 
+	log.Info("running requirement checks...")
+
 	if _, err = exec.Command("git", "--version").Output(); err != nil {
 		log.Fatal("git must be installed for this command")
 	}
@@ -78,6 +80,8 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal("the system temp directory is unavailable")
 	}
+
+	log.Info("cloning repository: %s", cfg.Git.Address)
 
 	if _, err = exec.Command("git", "clone", cfg.Git.Address, temp).Output(); err != nil {
 		log.Fatal("failed to clone repository into temp directory")
@@ -112,21 +116,25 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	}
 
 	if len(parsed) == 0 {
-		log.Fatal("no files could be resolved to an absolute path")
+		log.Error("no files could be resolved to an absolute path")
+		log.Fatal("make sure you have specified valid include/exclude paths in your config")
 	}
+
+	log.Info("testing panel connection...")
 
 	http := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
 	if ok, code, err := http.Test(); !ok {
 		log.Fatal("%s (status: %d)", err.Error(), code)
 	}
 
+	log.Info("connected, setting power state...")
+
 	state := "stop"
 	if cfg.System.ForceKill {
 		state = "kill"
 	}
-
 	if err = http.SetPower(state); err != nil {
-		log.Warn("failed to update power state")
+		log.Warn("failed to update power state; continuing process")
 	}
 
 	root, err := http.GetRootFiles()
@@ -153,6 +161,7 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 
 	if len(remove) != 0 {
 		if err = http.DeleteFiles(remove); err != nil {
+			log.Error("failed to remove existing files:")
 			log.WithFatal(err)
 		}
 	}
@@ -166,6 +175,8 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 		return c
 	}
 
+	log.Info("paths resolved; starting uploads")
+
 	for n, p := range parsed {
 		log.Info("uploading file (%d/%d)", n+1, len(parsed))
 
@@ -177,7 +188,11 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	}
 
 	log.Info("uploads completed")
-	if err = http.SetPower("start"); err != nil {
+	if err = http.SetPower("restart"); err != nil {
 		log.Warn("failed to update power state")
+	} else {
+		log.Info("server set to restart")
 	}
+
+	log.Info("successfully deployed to server: %s", cfg.Panel.ID)
 }
