@@ -12,6 +12,7 @@ panel:
 
 	# the identifier of the server to deploy to
 	id: ""
+
 repository:
 	# a list of files to include in the upload
 	# at least one file must be specified, by default "*" is set for all files
