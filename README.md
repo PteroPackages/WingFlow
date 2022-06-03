@@ -2,7 +2,7 @@
 WingFlow is a useful CLI tool for automatic uploading and deployment of projects to Pterodactyl servers.
 
 ## Installation
-TODO
+See the [releases page](https://github.com/PteroPackages/WingFlow/releases).
 
 ### From Source
 ```
