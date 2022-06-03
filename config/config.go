@@ -84,9 +84,9 @@ func Fetch(dir string) (*Config, error) {
 	return cfg, nil
 }
 
-func Create(dir string) error {
+func Create(dir string, force bool) error {
 	path := filepath.Join(filepath.Clean(dir), "wingflow.yml")
-	if exists(path) {
+	if exists(path) && !force {
 		return errors.New("config file already exists at this path")
 	}
 
