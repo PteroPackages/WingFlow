@@ -59,31 +59,38 @@ func (c *Client) Test() (bool, int, error) {
 	return true, res.StatusCode, nil
 }
 
-func (c *Client) GetUploadURL() (string, error) {
-	body := bytes.Buffer{}
-	req, _ := http.NewRequest("GET", c.route("/servers/:id/files/upload"), &body)
+func (c *Client) GetRootFiles() ([]string, error) {
+	req, _ := http.NewRequest("GET", c.route("/servers/:id/files/list"), nil)
 	req = c.addHeaders(req)
 
 	res, err := c.client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return "", errors.New("received an invalid status from the api")
+		return nil, fmt.Errorf("unknown error: %d", res.StatusCode)
 	}
 
-	var data struct {
-		Attributes struct {
-			URL string
-		}
+	type file struct {
+		Name string `json:"name"`
+	}
+	var wrapper struct {
+		Data []struct {
+			Attributes file `json:"attributes"`
+		} `json:"data"`
 	}
 
 	defer res.Body.Close()
 	buf, _ := io.ReadAll(res.Body)
-	json.Unmarshal(buf, &data)
+	json.Unmarshal(buf, &wrapper)
 
-	return data.Attributes.URL, nil
+	names := make([]string, len(wrapper.Data))
+	for _, d := range wrapper.Data {
+		names = append(names, d.Attributes.Name)
+	}
+
+	return names, nil
 }
 
 func (c *Client) WriteFile(path, name string) error {
