@@ -62,8 +62,9 @@ func walkAll(root string) ([]string, error) {
 
 func handleRunCmd(cmd *cobra.Command, args []string) {
 	nc, _ := cmd.Flags().GetBool("no-color")
+	debug, _ := cmd.Flags().GetBool("debug")
 	dir := cmd.Flag("dir").Value.String()
-	log := logger.New(nc, true)
+	log := logger.New(nc, debug)
 
 	cfg, err := config.Fetch(dir)
 	if err != nil {
@@ -81,6 +82,7 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 		log.Fatal("the system temp directory is unavailable")
 	}
 
+	log.Debug("created temp at: %s", temp)
 	log.Info("cloning repository: %s", cfg.Git.Address)
 
 	if _, err = exec.Command("git", "clone", cfg.Git.Address, temp).Output(); err != nil {
@@ -125,6 +127,8 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	http := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
 	if ok, code, err := http.Test(); !ok {
 		log.Fatal("%s (status: %d)", err.Error(), code)
+	} else {
+		log.Debug("panel response: %d", code)
 	}
 
 	log.Info("connected, setting power state...")
@@ -133,12 +137,15 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	if cfg.System.ForceKill {
 		state = "kill"
 	}
+	log.Debug("setting power state: %s", state)
+
 	if err = http.SetPower(state); err != nil {
 		log.Warn("failed to update power state; continuing process")
 	}
 
 	root, err := http.GetRootFiles()
 	if err != nil {
+		log.Error("failed fetch root directory files:")
 		log.WithFatal(err)
 	}
 
@@ -179,6 +186,7 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 
 	for n, p := range parsed {
 		log.Info("uploading file (%d/%d)", n+1, len(parsed))
+		log.Debug(p)
 
 		if err = http.WriteFile(p, wingsPath(p)); err != nil {
 			log.Warn("failed to upload file:")

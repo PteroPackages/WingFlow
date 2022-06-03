@@ -26,7 +26,7 @@ var initCmd = &cobra.Command{
 		nc, _ := cmd.Flags().GetBool("no-color")
 		force, _ := cmd.Flags().GetBool("force")
 		dir := cmd.Flag("dir").Value.String()
-		log := logger.New(nc, true)
+		log := logger.New(nc, false)
 
 		err := config.Create(dir, force)
 		if err != nil {
@@ -61,10 +61,11 @@ func init() {
 	}
 
 	initCmd.Flags().String("dir", dir, "the directory to create the config in")
-	initCmd.Flags().Bool("force", false, "force overwrite the config file")
+	initCmd.Flags().BoolP("force", "f", false, "force overwrite the config file")
 	initCmd.Flags().Bool("no-color", noColor, "disable color for the output")
 	checkCmd.Flags().String("dir", dir, "the directory of the config file")
 	checkCmd.Flags().Bool("no-color", noColor, "disable color for the output")
+	runCmd.Flags().Bool("debug", false, "output debug logs")
 	runCmd.Flags().String("dir", dir, "the directory of the config file")
 	runCmd.Flags().Bool("no-color", noColor, "disable color for the output")
 
