@@ -166,6 +166,7 @@ func (c *Client) WriteFile(path, name string) error {
 
 	req, _ := http.NewRequest("POST", c.route("/servers/:id/files/write?file="+name), &body)
 	req = c.addHeaders(req)
+	req.Header.Set("Content-Type", "text/plain")
 	res, err := c.client.Do(req)
 	if err != nil {
 		return err
@@ -175,12 +176,6 @@ func (c *Client) WriteFile(path, name string) error {
 		return nil
 	}
 
-	var data struct {
-		Error string
-	}
-	defer res.Body.Close()
-	buf, _ = io.ReadAll(res.Body)
-	json.Unmarshal(buf, &data)
-
-	return fmt.Errorf(data.Error)
+	// TODO: implement fractal
+	return fmt.Errorf("unknown error")
 }
