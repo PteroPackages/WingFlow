@@ -85,7 +85,7 @@ func (c *Client) GetRootFiles() ([]string, error) {
 	buf, _ := io.ReadAll(res.Body)
 	json.Unmarshal(buf, &wrapper)
 
-	names := make([]string, len(wrapper.Data))
+	var names []string
 	for _, d := range wrapper.Data {
 		names = append(names, d.Attributes.Name)
 	}
@@ -116,4 +116,29 @@ func (c *Client) WriteFile(path, name string) error {
 
 	// TODO: implement fractal
 	return fmt.Errorf("unknown error")
+}
+
+func (c *Client) DeleteFiles(paths []string) error {
+	data := struct {
+		Root  string   `json:"root"`
+		Files []string `json:"files"`
+	}{Root: "/", Files: paths}
+
+	buf, _ := json.Marshal(data)
+	body := bytes.Buffer{}
+	body.Write(buf)
+
+	req, _ := http.NewRequest("POST", c.route("/servers/:id/files/delete"), &body)
+	req = c.addHeaders(req)
+
+	res, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == http.StatusNoContent {
+		return nil
+	}
+
+	return fmt.Errorf("unknown error: %d", res.StatusCode)
 }
