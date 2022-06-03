@@ -61,7 +61,7 @@ func walkAll(root string) ([]string, error) {
 }
 
 func handleRunCmd(cmd *cobra.Command, args []string) {
-	nc := cmd.Flag("no-color").Value.String()
+	nc, _ := cmd.Flags().GetBool("no-color")
 	dir := cmd.Flag("dir").Value.String()
 	log := logger.New(nc, true)
 

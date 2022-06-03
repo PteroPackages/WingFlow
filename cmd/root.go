@@ -23,7 +23,7 @@ var initCmd = &cobra.Command{
 	Short: "creates a new config file",
 	Long:  "creates a new config file in the current workspace (or a specified one)",
 	Run: func(cmd *cobra.Command, args []string) {
-		nc := cmd.Flag("no-color").Value.String()
+		nc, _ := cmd.Flags().GetBool("no-color")
 		dir := cmd.Flag("dir").Value.String()
 		log := logger.New(nc, true)
 
@@ -78,7 +78,7 @@ func Execute() {
 		if state := recover(); state != nil {
 			stack := debug.Stack()
 
-			log := logger.New("true", false)
+			log := logger.New(false, false)
 			log.Error("%v", state)
 			log.Fatal(string(stack))
 		}
