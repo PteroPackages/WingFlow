@@ -92,7 +92,7 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	if !contains(cfg.Repository.Exclude, ".git") {
 		cfg.Repository.Exclude = append(cfg.Repository.Exclude, ".git")
 	}
-	ignored := ignore.CompileIgnoreLines(cfg.Repository.Exclude...)
+	sysIgnored := ignore.CompileIgnoreLines(cfg.Repository.Exclude...)
 
 	var parsed []string
 	for _, f := range files {
@@ -103,7 +103,7 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 		}
 
 		for _, p := range paths {
-			if ignored.MatchesPath(p) {
+			if sysIgnored.MatchesPath(p) {
 				continue
 			}
 
@@ -118,6 +118,34 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	http := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
 	if ok, code, err := http.Test(); !ok {
 		log.Fatal("%s (status: %d)", err.Error(), code)
+	}
+
+	root, err := http.GetRootFiles()
+	if err != nil {
+		log.WithFatal(err)
+	}
+
+	if len(cfg.System.Ignore) == 0 {
+		cfg.System.Ignore = append(cfg.System.Ignore, "*")
+	}
+
+	var remove []string
+	if contains(cfg.System.Ignore, "*") {
+		remove = root
+	} else {
+		panelIgnored := ignore.CompileIgnoreLines(cfg.System.Ignore...)
+
+		for _, p := range root {
+			if !panelIgnored.MatchesPath(p) {
+				remove = append(remove, p)
+			}
+		}
+	}
+
+	if len(remove) != 0 {
+		if err = http.DeleteFiles(remove); err != nil {
+			log.WithFatal(err)
+		}
 	}
 
 	wingsPath := func(p string) string {
