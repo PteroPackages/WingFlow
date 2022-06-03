@@ -120,8 +120,12 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 		log.Fatal("%s (status: %d)", err.Error(), code)
 	}
 
-	// TODO: force_kill?
-	if err = http.SetPower("stop"); err != nil {
+	state := "stop"
+	if cfg.System.ForceKill {
+		state = "kill"
+	}
+
+	if err = http.SetPower(state); err != nil {
 		log.Warn("failed to update power state")
 	}
 

@@ -42,9 +42,11 @@ type Config struct {
 	} `yaml:"repository"`
 
 	// Configurations for the file system in the server.
-	// Ignore - A list of files to ignore from being deleted.
+	// ForceKill - Whether to kill the server instead of stopping it.
+	// Ignore    - A list of files to ignore from being deleted.
 	System struct {
-		Ignore []string `yaml:"ignore"`
+		ForceKill bool     `yaml:"force_kill"`
+		Ignore    []string `yaml:"ignore"`
 	} `yaml:"system"`
 
 	// Commands to execute before starting the main process.
