@@ -77,6 +77,22 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 		log.Fatal("git must be installed for this command")
 	}
 
+	if len(cfg.PreRun) != 0 {
+		log.Info("running pre-run commands")
+		for n, cmd := range cfg.PreRun {
+			log.Info("%d:\n> %s", n+1, cmd)
+
+			args := strings.Split(cmd, " ")
+			out, err := exec.Command(args[0], args[1:]...).Output()
+			if err != nil {
+				log.Warn("command failed: %s", err.Error())
+				continue
+			}
+
+			log.Line(string(out))
+		}
+	}
+
 	temp, err := os.MkdirTemp("", "wflow-*")
 	if err != nil {
 		log.Fatal("the system temp directory is unavailable")
@@ -203,4 +219,22 @@ func handleRunCmd(cmd *cobra.Command, args []string) {
 	}
 
 	log.Info("successfully deployed to server: %s", cfg.Panel.ID)
+
+	if len(cfg.PostRun) != 0 {
+		log.Info("running post-run commands")
+		for n, cmd := range cfg.PostRun {
+			log.Info("%d:\n> %s", n+1, cmd)
+
+			args := strings.Split(cmd, " ")
+			out, err := exec.Command(args[0], args[1:]...).Output()
+			if err != nil {
+				log.Warn("command failed: %s", err.Error())
+				continue
+			}
+
+			log.Line(string(out))
+		}
+	}
+
+	log.Info("all processes completed!")
 }

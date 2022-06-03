@@ -25,6 +25,10 @@ func (l *Logger) Info(data string, args ...interface{}) {
 	}
 }
 
+func (l *Logger) Line(data string) {
+	fmt.Println(data)
+}
+
 func (l *Logger) Debug(data string, args ...interface{}) {
 	if l.debug {
 		fmt.Printf("DBUG: %s\n", fmt.Sprintf(data, args...))
