@@ -32,7 +32,10 @@ func walkAll(root string) ([]string, error) {
 		}
 
 		if strings.HasSuffix(root, entry.Name()) {
-			files = append(files, path)
+			if !entry.IsDir() {
+				files = append(files, path)
+			}
+
 			return nil
 		}
 
