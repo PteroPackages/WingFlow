@@ -60,7 +60,7 @@ func walkAll(root string) ([]string, error) {
 	return files, nil
 }
 
-func handleRunCmd(cmd *cobra.Command, args []string) {
+func handleRunCmd(cmd *cobra.Command, _ []string) {
 	nc, _ := cmd.Flags().GetBool("no-color")
 	debug, _ := cmd.Flags().GetBool("debug")
 	dir := cmd.Flag("dir").Value.String()

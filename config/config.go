@@ -13,9 +13,9 @@ type Config struct {
 	// Git repository credentials
 	// This currently only uses the git address, meaning there is no support for fetching from private repositories yet.
 	Git struct {
-		Address string `yaml:"address"`
+		Address string `validate:"required,url" yaml:"address"`
 		Token   string `yaml:"token,omitempty"`
-	} `yaml:"git"`
+	} `validate:"required" yaml:"git"`
 
 	// Pterodactyl panel credentials
 	// URL - The url to your panel. Only put the HTTP scheme and your domain
@@ -28,18 +28,18 @@ type Config struct {
 	//		 the URL when going to your server (e.g. "https://pterodacty.domain/servers/84ac52b",
 	//		 the last part is the identifier).
 	Panel struct {
-		URL string `yaml:"url"`
-		Key string `yaml:"key"`
-		ID  string `yaml:"id"`
-	} `yaml:"panel"`
+		URL string `validate:"required,url" yaml:"url"`
+		Key string `validate:"required" yaml:"key"`
+		ID  string `validate:"required" yaml:"id"`
+	} `validate:"required" yaml:"panel"`
 
 	// Configurations for the repository.
 	// Include - A list of file paths or patterns to include in the file upload.
 	// Exclude - A list of file paths or patterns to exclude from being uploaded.
 	Repository struct {
-		Include []string `yaml:"include"`
+		Include []string `validate:"required" yaml:"include"`
 		Exclude []string `yaml:"exlude"`
-	} `yaml:"repository"`
+	} `validate:"required" yaml:"repository"`
 
 	// Configurations for the file system in the server.
 	// ForceKill - Whether to kill the server instead of stopping it.
@@ -47,7 +47,7 @@ type Config struct {
 	System struct {
 		ForceKill bool     `yaml:"force_kill"`
 		Ignore    []string `yaml:"ignore"`
-	} `yaml:"system"`
+	} `validate:"required" yaml:"system"`
 
 	// Commands to execute before starting the main process.
 	PreRun []string `yaml:"pre_run"`
