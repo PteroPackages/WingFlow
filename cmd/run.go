@@ -141,8 +141,8 @@ func handleRunCmd(cmd *cobra.Command, _ []string) {
 	log.Info("testing panel connection...")
 
 	http := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
-	if ok, code, err := http.Test(); !ok {
-		log.Fatal("%s (status: %d)", err.Error(), code)
+	if code, err := http.Test(); err != nil {
+		log.Fatal(err.Error())
 	} else {
 		log.Debug("panel response: %d", code)
 	}
