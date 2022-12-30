@@ -32,4 +32,4 @@ go build -o build/ wflow.go
 
 This repository is managed under the MIT license.
 
-© 2022 PteroPackages
+© 2022-present PteroPackages
