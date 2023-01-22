@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var log *logger.Logger
+
 var rootCmd = &cobra.Command{
 	Use:     "wflow",
 	Example: "wflow [flags...] <command>",
@@ -22,9 +24,8 @@ var initCmd = &cobra.Command{
 	Short: "creates a new config file",
 	Long:  "Creates a new config file in the current workspace.",
 	Run: func(*cobra.Command, []string) {
-		log := logger.New(false, false)
 		if err := config.Create(false); err != nil {
-			log.WithFatal(err)
+			log.WithError(err)
 		}
 	},
 }
@@ -44,15 +45,14 @@ var runCmd = &cobra.Command{
 }
 
 func init() {
-	// dir, _ := os.Getwd()
-	// noColor := false
+	c := false
+	if _, ok := os.LookupEnv("NO_COLOR"); !ok {
+		if t := os.Getenv("TERM"); t != "DUMB" {
+			c = true
+		}
+	}
 
-	// if v, ok := os.LookupEnv("TERM"); ok {
-	// 	noColor = v == "dumb"
-	// }
-	// if _, ok := os.LookupEnv("NO_COLOR"); ok {
-	// 	noColor = false
-	// }
+	log = logger.New(c, false)
 
 	// initCmd.Flags().String("dir", dir, "the directory to create the config in")
 	// initCmd.Flags().BoolP("force", "f", false, "force overwrite the config file")
@@ -75,9 +75,9 @@ func Execute() {
 		if state := recover(); state != nil {
 			stack := debug.Stack()
 
-			log := logger.New(false, false)
 			log.Error("%v", state)
-			log.Fatal(string(stack))
+			log.Error(string(stack))
+			os.Exit(1)
 		}
 
 		os.Exit(0)
