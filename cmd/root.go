@@ -4,7 +4,9 @@ import (
 	"os"
 	"runtime/debug"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/pteropackages/wingflow/config"
+	"github.com/pteropackages/wingflow/http"
 	"github.com/pteropackages/wingflow/logger"
 	"github.com/spf13/cobra"
 )
@@ -13,18 +15,20 @@ var log *logger.Logger
 
 var rootCmd = &cobra.Command{
 	Use:     "wflow",
-	Example: "wflow [flags...] <command>",
+	Example: "wflow command [flags...]",
 	Short:   "automatic project deployment for pterodactyl",
 	Long:    "A tool for automatically deploying projects to Pterodactyl.",
 	Version: Version,
 }
 
 var initCmd = &cobra.Command{
-	Use:   "init",
+	Use:   "init [-f | --force]",
 	Short: "creates a new config file",
 	Long:  "Creates a new config file in the current workspace.",
-	Run: func(*cobra.Command, []string) {
-		if err := config.Create(false); err != nil {
+	Run: func(cmd *cobra.Command, _ []string) {
+		force, _ := cmd.Flags().GetBool("force")
+
+		if err := config.Create(force); err != nil {
 			if err.Error() == "exists" {
 				log.Error("config file already exists in this directory")
 				log.Error("re-run this command with '--force' to overwrite")
@@ -36,10 +40,39 @@ var initCmd = &cobra.Command{
 }
 
 var checkCmd = &cobra.Command{
-	Use:   "check",
+	Use:   "check [--dry]",
 	Short: "runs validation checks on the config file",
 	Long:  "Runs validation checks on the config file.",
-	Run:   func(*cobra.Command, []string) {},
+	Run: func(cmd *cobra.Command, _ []string) {
+		cfg, err := config.Get(true)
+		if err != nil {
+			errs, ok := err.(validator.ValidationErrors)
+			if !ok {
+				log.WithError(err)
+				return
+			}
+
+			log.Error("%d error(s) found", len(errs))
+			log.Error("")
+			for i, e := range errs {
+				log.Error("%d: %s rule failed for the '%s' field", i+1, e.Tag(), e.StructNamespace())
+			}
+			return
+		}
+
+		log.Info("config checks passed")
+		if dry, _ := cmd.Flags().GetBool("dry"); dry {
+			return
+		}
+
+		client := http.New(cfg.Panel.URL, cfg.Panel.Key, cfg.Panel.ID)
+		if st, err := client.TestConnection(); err != nil {
+			log.Error("%s (status: %d)", err, st)
+			return
+		}
+
+		log.Info("http checks passed")
+	},
 }
 
 var runCmd = &cobra.Command{
@@ -59,14 +92,8 @@ func init() {
 
 	log = logger.New(c, false)
 
-	// initCmd.Flags().String("dir", dir, "the directory to create the config in")
-	// initCmd.Flags().BoolP("force", "f", false, "force overwrite the config file")
-	// initCmd.Flags().Bool("no-color", noColor, "disable color for the output")
-	// checkCmd.Flags().String("dir", dir, "the directory of the config file")
-	// checkCmd.Flags().Bool("no-color", noColor, "disable color for the output")
-	// runCmd.Flags().Bool("debug", false, "output debug logs")
-	// runCmd.Flags().String("dir", dir, "the directory of the config file")
-	// runCmd.Flags().Bool("no-color", noColor, "disable color for the output")
+	initCmd.Flags().BoolP("force", "f", false, "force overwrite the existing config")
+	checkCmd.Flags().Bool("dry", false, "don't perform http checks")
 
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(checkCmd)
