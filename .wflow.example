@@ -1,0 +1,21 @@
+# example wingflow config file
+git:
+  # the git address/url
+  address: ""
+  files:
+    # a list of files to include from the repository, supports file globbing ("*")
+    include: []
+    # a list of files to exclude from the repository, supports file globbing ("*")
+    exclude: []
+panel:
+  # your pterodactyl panel url
+  url: ""
+  # a client API key for your panel
+  key: ""
+  # the identifier of the target server
+  id: ""
+  signal:
+    # should wingflow kill the server immediately or wait for a graceful shutdown
+    kill: false
+    # the time in milliseconds to wait before force-killing the server
+    timeout: 10000
