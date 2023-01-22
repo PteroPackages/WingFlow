@@ -11,7 +11,7 @@ import (
 
 type Config struct {
 	Git struct {
-		Address string `yaml:"address"`
+		Address string `valdiate:"uri" yaml:"address"`
 		Token   string `yaml:"token,omitempty"`
 		Files   struct {
 			Include []string `yaml:"include"`
@@ -20,13 +20,16 @@ type Config struct {
 	} `yaml:"git"`
 
 	Panel struct {
-		URL         string   `yaml:"url"`
-		Key         string   `yaml:"key"`
-		ID          string   `yaml:"id"`
-		IgnoreFiles []string `yaml:"ignore_files,omitempty"`
-		Signal      struct {
-			Kill    bool    `yaml:"kill"`
-			Timeout float64 `yaml:"timeout,omitempty"`
+		URL   string `validate:"url" yaml:"url"`
+		Key   string `yaml:"key"`
+		ID    string `yaml:"id"`
+		Files struct {
+			Backup   bool `yaml:"backup"`
+			Truncate bool `yaml:"truncate"`
+		} `yaml:"files"`
+		Signal struct {
+			Kill    bool  `yaml:"kill"`
+			Timeout int64 `yaml:"timeout"`
 		} `yaml:"signal"`
 	} `yaml:"panel"`
 }
@@ -78,9 +81,14 @@ func Create(force bool) error {
 	}
 	defer fd.Close()
 
+	cfg := Config{}
+	cfg.Git.Files.Include = []string{"*"}
+	cfg.Panel.Files.Backup = true
+	cfg.Panel.Signal.Timeout = 10_000
+
 	enc := yaml.NewEncoder(fd)
 	enc.SetIndent(2)
-	enc.Encode(Config{})
+	enc.Encode(cfg)
 	enc.Close()
 
 	return nil

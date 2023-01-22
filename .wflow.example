@@ -14,6 +14,11 @@ panel:
   key: ""
   # the identifier of the target server
   id: ""
+  files:
+    # create a backup of the server files before uploading
+    backup: true
+    # remove all files from the server before uploading
+    truncate: false
   signal:
     # should wingflow kill the server immediately or wait for a graceful shutdown
     kill: false
