@@ -69,7 +69,7 @@ func Create(force bool) error {
 	cwd, _ := os.Getwd()
 	path := filepath.Join(cwd, ".wflow")
 	if exists(path) && !force {
-		return errors.New("config file already exists in this directory")
+		return errors.New("exists")
 	}
 
 	fd, err := os.Create(path)

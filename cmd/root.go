@@ -25,7 +25,12 @@ var initCmd = &cobra.Command{
 	Long:  "Creates a new config file in the current workspace.",
 	Run: func(*cobra.Command, []string) {
 		if err := config.Create(false); err != nil {
-			log.WithError(err)
+			if err.Error() == "exists" {
+				log.Error("config file already exists in this directory")
+				log.Error("re-run this command with '--force' to overwrite")
+			} else {
+				log.WithError(err)
+			}
 		}
 	},
 }
