@@ -26,14 +26,14 @@ var (
 var rootCmd = &cobra.Command{
 	Use:     "wflow command",
 	Short:   "A tool for automatically deploying projects to Pterodactyl",
-	Long:    "A tool for automatically deploying projects to Pterodactyl",
+	Long:    "A tool for automatically deploying projects to Pterodactyl.",
 	Version: Version,
 }
 
 var initCmd = &cobra.Command{
 	Use:   "init [-f | --force]",
 	Short: "Creates a new config file in the current workspace",
-	Long:  "Creates a new config file in the current workspace",
+	Long:  initCmdHelp,
 	Run: func(cmd *cobra.Command, _ []string) {
 		force, _ := cmd.Flags().GetBool("force")
 
@@ -51,7 +51,7 @@ var initCmd = &cobra.Command{
 var checkCmd = &cobra.Command{
 	Use:   "check [--dry]",
 	Short: "runs validation checks on the config file",
-	Long:  "Runs validation checks on the config file",
+	Long:  checkCmdHelp,
 	Run: func(cmd *cobra.Command, _ []string) {
 		cfg, err := config.Get(true)
 		if err != nil {
@@ -87,7 +87,7 @@ var checkCmd = &cobra.Command{
 var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Fetches and deploys the configured project to the Pterodactyl server",
-	Long:  "Fetches and deploys the configured project to the Pterodactyl server",
+	Long:  runCmdHelp,
 	Run:   func(*cobra.Command, []string) {},
 }
 
