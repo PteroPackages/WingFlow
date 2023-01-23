@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"runtime/debug"
 	"strings"
 
@@ -68,8 +69,14 @@ var checkCmd = &cobra.Command{
 			}
 			return
 		}
-
 		log.Info("config checks passed")
+
+		if exec.Command("git", "--version").Run() != nil {
+			log.Error("git version tool not found")
+		} else {
+			log.Info("git checks passed")
+		}
+
 		if dry, _ := cmd.Flags().GetBool("dry"); dry {
 			return
 		}
@@ -88,7 +95,7 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Fetches and deploys the configured project to the Pterodactyl server",
 	Long:  runCmdHelp,
-	Run:   func(*cobra.Command, []string) {},
+	Run:   handleRunCmd,
 }
 
 func init() {
