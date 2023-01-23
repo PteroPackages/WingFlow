@@ -23,7 +23,7 @@ func New(url, key, id string) *Client {
 func (c *Client) newRequest(method, route string, body io.Reader) *http.Request {
 	r, _ := http.NewRequest(method, c.URL+route, body)
 	r.Header.Set("User-Agent", "WingFlow Client")
-	r.Header.Set("Authorizarion", fmt.Sprintf("Bearer %s", c.Key))
+	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Key))
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("Accept", "application/json")
 
@@ -73,7 +73,7 @@ func (c *Client) GetFiles() ([]string, error) {
 	return n, nil
 }
 
-func (c *Client) UploadFile(w *io.Reader) error {
+func (c *Client) UploadFile(b bytes.Buffer) error {
 	return nil
 }
 
