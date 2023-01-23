@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"runtime/debug"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/pteropackages/wingflow/config"
@@ -11,20 +13,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var log *logger.Logger
+var (
+	log      *logger.Logger
+	useColor = false
+)
+
+var (
+	formatAscii = strings.NewReplacer("$H", "\033[1m««« \033[36mSOAR\033[0m\033[1m »»»\033[0m", "$B", "\033[36m", "$S", "\033[1m", "$R", "\033[0m")
+	formatNone  = strings.NewReplacer("$H", "««« SOAR »»»", "$B", "\033[0m", "$S", "\033[0m", "$R", "\033[0m")
+)
 
 var rootCmd = &cobra.Command{
-	Use:     "wflow",
-	Example: "wflow command [flags...]",
-	Short:   "automatic project deployment for pterodactyl",
-	Long:    "A tool for automatically deploying projects to Pterodactyl.",
+	Use:     "wflow command",
+	Short:   "A tool for automatically deploying projects to Pterodactyl",
+	Long:    "A tool for automatically deploying projects to Pterodactyl",
 	Version: Version,
 }
 
 var initCmd = &cobra.Command{
 	Use:   "init [-f | --force]",
-	Short: "creates a new config file",
-	Long:  "Creates a new config file in the current workspace.",
+	Short: "Creates a new config file in the current workspace",
+	Long:  "Creates a new config file in the current workspace",
 	Run: func(cmd *cobra.Command, _ []string) {
 		force, _ := cmd.Flags().GetBool("force")
 
@@ -42,7 +51,7 @@ var initCmd = &cobra.Command{
 var checkCmd = &cobra.Command{
 	Use:   "check [--dry]",
 	Short: "runs validation checks on the config file",
-	Long:  "Runs validation checks on the config file.",
+	Long:  "Runs validation checks on the config file",
 	Run: func(cmd *cobra.Command, _ []string) {
 		cfg, err := config.Get(true)
 		if err != nil {
@@ -77,21 +86,21 @@ var checkCmd = &cobra.Command{
 
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "fetches and deploys to pterodactyl",
-	Long:  "Fetches and deploys the configured project to the pterodactyl server.",
+	Short: "Fetches and deploys the configured project to the Pterodactyl server",
+	Long:  "Fetches and deploys the configured project to the Pterodactyl server",
 	Run:   func(*cobra.Command, []string) {},
 }
 
 func init() {
-	c := false
 	if _, ok := os.LookupEnv("NO_COLOR"); !ok {
 		if t := os.Getenv("TERM"); t != "DUMB" {
-			c = true
+			useColor = true
 		}
 	}
 
-	log = logger.New(c, false)
+	log = logger.New(useColor, false)
 
+	rootCmd.Flags().Bool("no-color", false, "disable ansi color codes")
 	initCmd.Flags().BoolP("force", "f", false, "force overwrite the existing config")
 	checkCmd.Flags().Bool("dry", false, "don't perform http checks")
 
@@ -99,6 +108,33 @@ func init() {
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(runCmd)
 
+	cobra.AddTemplateFunc("splitLines", func(s string) []string {
+		a := strings.Split(s, "\n")
+		var r []string
+		for _, i := range a {
+			if len(i) != 0 {
+				r = append(r, i)
+			}
+		}
+		return r
+	})
+	rootCmd.SetHelpTemplate(color(`$H
+{{.Short}}
+
+$BUsage$R
+» $S{{.UseLine}}$R
+{{if gt (len .Commands) 0}}
+$BCommands$R{{range .Commands}}
+» $S{{rpad .Name .NamePadding}}$R {{.Short}}{{end}}
+{{end}}
+$BFlags$R{{range .LocalFlags.FlagUsages | splitLines}}
+» {{.}}{{end}}
+
+$BDescription$R
+{{.Long}}
+{{if gt (len .Commands) 0}}
+Use '$Bwflow{{if (eq .Name "wflow" | not)}} {{.Name}}{{end}} --help$R' for more information about a command{{end}}
+`))
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
 
@@ -116,4 +152,13 @@ func Execute() {
 	}()
 
 	rootCmd.Execute()
+}
+
+func color(s string, data ...interface{}) string {
+	s = fmt.Sprintf(s, data...)
+	if useColor {
+		return formatAscii.Replace(s)
+	} else {
+		return formatNone.Replace(s)
+	}
 }
